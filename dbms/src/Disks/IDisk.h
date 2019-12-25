@@ -17,8 +17,7 @@ extern const Metric DiskSpaceReservedForMerge;
 
 namespace DB
 {
-class IDiskDirectoryIterator;
-using DiskDirectoryIteratorPtr = std::unique_ptr<IDiskDirectoryIterator>;
+class DiskDirectoryIterator;
 
 class IReservation;
 using ReservationPtr = std::unique_ptr<IReservation>;
@@ -94,7 +93,7 @@ public:
     virtual void moveDirectory(const String & from_path, const String & to_path) = 0;
 
     /// Return iterator to the contents of the specified directory.
-    virtual DiskDirectoryIteratorPtr iterateDirectory(const String & path) = 0;
+    virtual DiskDirectoryIterator iterateDirectory(const String & path) = 0;
 
     /// Return `true` if the specified directory is empty.
     bool isDirectoryEmpty(const String & path);
@@ -119,9 +118,9 @@ using DiskPtr = std::shared_ptr<IDisk>;
 using Disks = std::vector<DiskPtr>;
 
 /**
- * Iterator of directory contents on particular disk.
+ * Interface for internal disk directory iterator implementation
  */
-class IDiskDirectoryIterator
+class IDiskDirectoryIteratorImpl
 {
 public:
     /// Iterate to the next file.
@@ -133,7 +132,28 @@ public:
     /// Name of the file that the iterator currently points to.
     virtual String name() const = 0;
 
-    virtual ~IDiskDirectoryIterator() = default;
+    virtual ~IDiskDirectoryIteratorImpl() = default;
+};
+
+/**
+ * Iterator of directory contents on particular disk.
+ */
+class DiskDirectoryIterator : public std::iterator<std::forward_iterator_tag, String>
+{
+public:
+    DiskDirectoryIterator() = default;
+    DiskDirectoryIterator(std::unique_ptr<IDiskDirectoryIteratorImpl> && impl_);
+
+    bool operator==(DiskDirectoryIterator const &) const;
+
+    bool operator!=(DiskDirectoryIterator const &) const;
+
+    DiskDirectoryIterator & operator++();
+
+    String operator*() const;
+
+private:
+    std::unique_ptr<IDiskDirectoryIteratorImpl> impl;
 };
 
 /**

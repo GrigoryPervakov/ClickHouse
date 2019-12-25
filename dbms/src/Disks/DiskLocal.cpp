@@ -6,6 +6,24 @@
 #include <Common/quoteString.h>
 
 
+namespace
+{
+class DiskLocalDirectoryIteratorImpl : public DB::IDiskDirectoryIteratorImpl
+{
+public:
+    explicit DiskLocalDirectoryIteratorImpl(const DB::String & path) : iter(path) {}
+
+    void next() override { ++iter; }
+
+    bool isValid() const override { return iter != Poco::DirectoryIterator(); }
+
+    DB::String name() const override { return iter.name(); }
+
+private:
+    Poco::DirectoryIterator iter;
+};
+}
+
 namespace DB
 {
 namespace ErrorCodes
@@ -119,9 +137,9 @@ void DiskLocal::moveDirectory(const String & from_path, const String & to_path)
     Poco::File(disk_path + from_path).renameTo(disk_path + to_path);
 }
 
-DiskDirectoryIteratorPtr DiskLocal::iterateDirectory(const String & path)
+DiskDirectoryIterator DiskLocal::iterateDirectory(const String & path)
 {
-    return std::make_unique<DiskLocalDirectoryIterator>(disk_path + path);
+    return DiskDirectoryIterator(std::make_unique<DiskLocalDirectoryIteratorImpl>(disk_path + path));
 }
 
 void DiskLocal::moveFile(const String & from_path, const String & to_path)

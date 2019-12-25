@@ -59,7 +59,7 @@ public:
 
     void moveDirectory(const String & from_path, const String & to_path) override;
 
-    DiskDirectoryIteratorPtr iterateDirectory(const String & path) override;
+    DiskDirectoryIterator iterateDirectory(const String & path) override;
 
     void moveFile(const String & from_path, const String & to_path) override;
 
@@ -86,22 +86,6 @@ private:
 };
 
 using DiskLocalPtr = std::shared_ptr<DiskLocal>;
-
-
-class DiskLocalDirectoryIterator : public IDiskDirectoryIterator
-{
-public:
-    explicit DiskLocalDirectoryIterator(const String & path) : iter(path) {}
-
-    void next() override { ++iter; }
-
-    bool isValid() const override { return iter != Poco::DirectoryIterator(); }
-
-    String name() const override { return iter.name(); }
-
-private:
-    Poco::DirectoryIterator iter;
-};
 
 class DiskLocalReservation : public IReservation
 {
